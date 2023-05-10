@@ -369,12 +369,16 @@ impl Curve {
 		let hours = days * 24;
 		println!("Curve {} := {:?}:", name, self);
 		println!("   t + 0h:   {:?}", self.threshold(Perbill::zero()));
-		println!("   t + 1h:   {:?}", self.threshold(Perbill::from_rational(1, hours)));
 		println!("   t + 2h:   {:?}", self.threshold(Perbill::from_rational(2, hours)));
-		println!("   t + 3h:   {:?}", self.threshold(Perbill::from_rational(3, hours)));
+		println!("   t + 4h:   {:?}", self.threshold(Perbill::from_rational(4, hours)));
 		println!("   t + 6h:   {:?}", self.threshold(Perbill::from_rational(6, hours)));
-		println!("   t + 12h:  {:?}", self.threshold(Perbill::from_rational(12, hours)));
+		println!("   t + 12h:   {:?}", self.threshold(Perbill::from_rational(12, hours)));
 		println!("   t + 24h:  {:?}", self.threshold(Perbill::from_rational(24, hours)));
+		println!("   t + 48h:  {:?}", self.threshold(Perbill::from_rational(48, hours)));
+		println!("   t + 144h:  {:?}", self.threshold(Perbill::from_rational(144, hours)));
+		println!("   t + 336h:  {:?}", self.threshold(Perbill::from_rational(336, hours)));
+		println!("   t + 480h:  {:?}", self.threshold(Perbill::from_rational(480, hours)));
+		println!("   t + 672h:  {:?}", self.threshold(Perbill::from_rational(672, hours)));
 		let mut l = 0;
 		for &(n, d) in [(1, 12), (1, 8), (1, 4), (1, 2), (3, 4), (1, 1)].iter() {
 			let t = days * n / d;
@@ -534,50 +538,85 @@ mod tests {
 	const fn percent(x: u128) -> FixedI64 {
 		FixedI64::from_rational(x, 100)
 	}
-
-	const TIP_APP: Curve = Curve::make_linear(10, 28, percent(50), percent(100));
-	const TIP_SUP: Curve = Curve::make_reciprocal(1, 28, percent(4), percent(0), percent(50));
-	const ROOT_APP: Curve = Curve::make_reciprocal(4, 28, percent(80), percent(50), percent(100));
-	const ROOT_SUP: Curve = Curve::make_linear(28, 28, percent(0), percent(50));
-	const WHITE_APP: Curve =
+	const APP_ROOT: Curve = Curve::make_reciprocal(4, 28, percent(80), percent(50), percent(100));
+	const SUP_ROOT: Curve = Curve::make_linear(28, 28, percent(0), percent(50));
+	const APP_STAKING_ADMIN: Curve = Curve::make_linear(17, 28, percent(50), percent(100));
+	const SUP_STAKING_ADMIN: Curve =
+		Curve::make_reciprocal(12, 28, percent(1), percent(0), percent(50));
+	const APP_TREASURER: Curve = Curve::make_reciprocal(4, 28, percent(80), percent(50), percent(100));
+	const SUP_TREASURER: Curve = Curve::make_linear(28, 28, percent(0), percent(50));
+	const APP_FELLOWSHIP_ADMIN: Curve = Curve::make_linear(17, 28, percent(50), percent(100));
+	const SUP_FELLOWSHIP_ADMIN: Curve =
+		Curve::make_reciprocal(12, 28, percent(1), percent(0), percent(50));
+	const APP_GENERAL_ADMIN: Curve =
+		Curve::make_reciprocal(4, 28, percent(80), percent(50), percent(100));
+	const SUP_GENERAL_ADMIN: Curve =
+		Curve::make_reciprocal(7, 28, percent(10), percent(0), percent(50));
+	const APP_AUCTION_ADMIN: Curve =
+		Curve::make_reciprocal(4, 28, percent(80), percent(50), percent(100));
+	const SUP_AUCTION_ADMIN: Curve =
+		Curve::make_reciprocal(7, 28, percent(10), percent(0), percent(50));
+	const APP_LEASE_ADMIN: Curve = Curve::make_linear(17, 28, percent(50), percent(100));
+	const SUP_LEASE_ADMIN: Curve = Curve::make_reciprocal(12, 28, percent(1), percent(0), percent(50));
+	const APP_REFERENDUM_CANCELLER: Curve = Curve::make_linear(17, 28, percent(50), percent(100));
+	const SUP_REFERENDUM_CANCELLER: Curve =
+		Curve::make_reciprocal(12, 28, percent(1), percent(0), percent(50));
+	const APP_REFERENDUM_KILLER: Curve = Curve::make_linear(17, 28, percent(50), percent(100));
+	const SUP_REFERENDUM_KILLER: Curve =
+		Curve::make_reciprocal(12, 28, percent(1), percent(0), percent(50));
+	const APP_SMALL_TIPPER: Curve = Curve::make_linear(10, 28, percent(50), percent(100));
+	const SUP_SMALL_TIPPER: Curve = Curve::make_reciprocal(1, 28, percent(4), percent(0), percent(50));
+	const APP_BIG_TIPPER: Curve = Curve::make_linear(10, 28, percent(50), percent(100));
+	const SUP_BIG_TIPPER: Curve = Curve::make_reciprocal(8, 28, percent(1), percent(0), percent(50));
+	const APP_SMALL_SPENDER: Curve = Curve::make_linear(17, 28, percent(50), percent(100));
+	const SUP_SMALL_SPENDER: Curve =
+		Curve::make_reciprocal(12, 28, percent(1), percent(0), percent(50));
+	const APP_MEDIUM_SPENDER: Curve = Curve::make_linear(23, 28, percent(50), percent(100));
+	const SUP_MEDIUM_SPENDER: Curve =
+		Curve::make_reciprocal(16, 28, percent(1), percent(0), percent(50));
+	const APP_BIG_SPENDER: Curve = Curve::make_linear(28, 28, percent(50), percent(100));
+	const SUP_BIG_SPENDER: Curve = Curve::make_reciprocal(20, 28, percent(1), percent(0), percent(50));
+	const APP_WHITELISTED_CALLER: Curve =
 		Curve::make_reciprocal(16, 28 * 24, percent(96), percent(50), percent(100));
-	const WHITE_SUP: Curve = Curve::make_reciprocal(1, 28, percent(20), percent(10), percent(50));
-	const SMALL_APP: Curve = Curve::make_linear(10, 28, percent(50), percent(100));
-	const SMALL_SUP: Curve = Curve::make_reciprocal(8, 28, percent(1), percent(0), percent(50));
-	const MID_APP: Curve = Curve::make_linear(17, 28, percent(50), percent(100));
-	const MID_SUP: Curve = Curve::make_reciprocal(12, 28, percent(1), percent(0), percent(50));
-	const BIG_APP: Curve = Curve::make_linear(23, 28, percent(50), percent(100));
-	const BIG_SUP: Curve = Curve::make_reciprocal(16, 28, percent(1), percent(0), percent(50));
-	const HUGE_APP: Curve = Curve::make_linear(28, 28, percent(50), percent(100));
-	const HUGE_SUP: Curve = Curve::make_reciprocal(20, 28, percent(1), percent(0), percent(50));
-	const PARAM_APP: Curve = Curve::make_reciprocal(4, 28, percent(80), percent(50), percent(100));
-	const PARAM_SUP: Curve = Curve::make_reciprocal(7, 28, percent(10), percent(0), percent(50));
-	const ADMIN_APP: Curve = Curve::make_linear(17, 28, percent(50), percent(100));
-	const ADMIN_SUP: Curve = Curve::make_reciprocal(12, 28, percent(1), percent(0), percent(50));
-
+	const SUP_WHITELISTED_CALLER: Curve =
+		Curve::make_reciprocal(1, 28, percent(20), percent(5), percent(50));
+	
 	// TODO: ceil for linear.
 
 	#[test]
 	#[should_panic]
 	fn check_curves() {
-		TIP_APP.info(28u32, "Tip Approval");
-		TIP_SUP.info(28u32, "Tip Support");
-		ROOT_APP.info(28u32, "Root Approval");
-		ROOT_SUP.info(28u32, "Root Support");
-		WHITE_APP.info(28u32, "Whitelist Approval");
-		WHITE_SUP.info(28u32, "Whitelist Support");
-		SMALL_APP.info(28u32, "Small Spend Approval");
-		SMALL_SUP.info(28u32, "Small Spend Support");
-		MID_APP.info(28u32, "Mid Spend Approval");
-		MID_SUP.info(28u32, "Mid Spend Support");
-		BIG_APP.info(28u32, "Big Spend Approval");
-		BIG_SUP.info(28u32, "Big Spend Support");
-		HUGE_APP.info(28u32, "Huge Spend Approval");
-		HUGE_SUP.info(28u32, "Huge Spend Support");
-		PARAM_APP.info(28u32, "Mid-tier Parameter Change Approval");
-		PARAM_SUP.info(28u32, "Mid-tier Parameter Change Support");
-		ADMIN_APP.info(28u32, "Admin (e.g. Cancel Slash) Approval");
-		ADMIN_SUP.info(28u32, "Admin (e.g. Cancel Slash) Support");
+		APP_ROOT.info(28u32, "Root Approval");
+		SUP_ROOT.info(28u32, "Root Support");
+		APP_STAKING_ADMIN.info(28u32, "Staking Approval");
+		SUP_STAKING_ADMIN.info(28u32, "Staking Support");
+		APP_TREASURER.info(28u32, "Treasurer Approval");
+		SUP_TREASURER.info(28u32, "Treasurer Support");
+		APP_FELLOWSHIP_ADMIN.info(28u32, "Fellowship Approval");
+		SUP_FELLOWSHIP_ADMIN.info(28u32, "Fellowship Support");
+		APP_GENERAL_ADMIN.info(28u32, "Admin Approval");
+		SUP_GENERAL_ADMIN.info(28u32, "Admin Support");
+		APP_AUCTION_ADMIN.info(28u32, "Auction Approval");
+		SUP_AUCTION_ADMIN.info(28u32, "Auction Support");
+		APP_LEASE_ADMIN.info(28u32, "Lease Approval");
+		SUP_LEASE_ADMIN.info(28u32, "Lease Support");
+		APP_REFERENDUM_CANCELLER.info(28u32, "Referendum Canceller Approval");
+		SUP_REFERENDUM_CANCELLER.info(28u32, "Referendum Canceller Support");
+		APP_REFERENDUM_KILLER.info(28u32, "Referendum Killer Approval");
+		SUP_REFERENDUM_KILLER.info(28u32, "Referendum Killer Support");
+		APP_SMALL_TIPPER.info(28u32, "Small Tipper Approval");
+		SUP_SMALL_TIPPER.info(28u32, "Small Tipper Support");
+		APP_BIG_TIPPER.info(28u32, "Big Tipper Approval");
+		SUP_BIG_TIPPER.info(28u32, "Big Tipper Support");
+		APP_SMALL_SPENDER.info(28u32, "Small Spender Approval");
+		SUP_SMALL_SPENDER.info(28u32, "Small Spender Support");
+		APP_MEDIUM_SPENDER.info(28u32, "Medium Spender Approval");
+		SUP_MEDIUM_SPENDER.info(28u32, "Medium Spender Support");
+		APP_BIG_SPENDER.info(28u32, "Big Spender Approval");
+		SUP_BIG_SPENDER.info(28u32, "Big Spender Support");
+		APP_WHITELISTED_CALLER.info(28u32, "Whitelist Approval");
+		SUP_WHITELISTED_CALLER.info(28u32, "Whitelist Support");
+
 		assert!(false);
 	}
 
