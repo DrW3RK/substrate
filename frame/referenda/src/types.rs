@@ -27,6 +27,8 @@ use scale_info::TypeInfo;
 use sp_arithmetic::{Rounding::*, SignedRounding::*};
 use sp_runtime::{FixedI64, PerThing, RuntimeDebug};
 use sp_std::fmt::Debug;
+use std::io;
+use std::error::Error;
 
 pub type BalanceOf<T, I = ()> =
 	<<T as Config<I>>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -365,64 +367,21 @@ impl Curve {
 
 	/// Print some info on the curve.
 	#[cfg(feature = "std")]
-	pub fn info(&self, days: u32, name: impl std::fmt::Display) {
+	pub fn info(&self, days: u32, name: impl std::fmt::Display) -> Result<(), Box<dyn Error>> {
+		let mut wtr = csv::Writer::from_path(name.to_string())?;
+		wtr.write_record(&["Time", "Threshold"])?;
+
 		let hours = days * 24;
 		println!("Curve {} := {:?}:", name, self);
 		println!("   t + 0h:   {:?}", self.threshold(Perbill::zero()));
-		println!("   t + 2h:   {:?}", self.threshold(Perbill::from_rational(2, hours)));
-		println!("   t + 4h:   {:?}", self.threshold(Perbill::from_rational(4, hours)));
-		println!("   t + 6h:   {:?}", self.threshold(Perbill::from_rational(6, hours)));
-		println!("   t + 12h:   {:?}", self.threshold(Perbill::from_rational(12, hours)));
-		println!("   t + 24h:  {:?}", self.threshold(Perbill::from_rational(24, hours)));
-		println!("   t + 48h:  {:?}", self.threshold(Perbill::from_rational(48, hours)));
-		println!("   t + 144h:  {:?}", self.threshold(Perbill::from_rational(144, hours)));
-		println!("   t + 336h:  {:?}", self.threshold(Perbill::from_rational(336, hours)));
-		println!("   t + 480h:  {:?}", self.threshold(Perbill::from_rational(480, hours)));
-		println!("   t + 672h:  {:?}", self.threshold(Perbill::from_rational(672, hours)));
-		let mut l = 0;
-		for &(n, d) in [(1, 12), (1, 8), (1, 4), (1, 2), (3, 4), (1, 1)].iter() {
-			let t = days * n / d;
-			if t != l {
-				println!("   t + {}d:   {:?}", t, self.threshold(Perbill::from_rational(t, days)));
-				l = t;
-			}
+		wtr.serialize((0,self.threshold(Perbill::zero())))?;
+		for n in 1..673 {
+			println!("   t + {}h:   {:?}", n, self.threshold(Perbill::from_rational(n, hours)));
+			wtr.serialize((n,self.threshold(Perbill::from_rational(n, hours))))?;
 		}
-		let t = |p: Perbill| -> std::string::String {
-			if p.is_one() {
-				"never".into()
-			} else {
-				let minutes = p * (hours * 60);
-				if minutes < 60 {
-					format!("{} minutes", minutes)
-				} else if minutes < 8 * 60 && minutes % 60 != 0 {
-					format!("{} hours {} minutes", minutes / 60, minutes % 60)
-				} else if minutes < 72 * 60 {
-					format!("{} hours", minutes / 60)
-				} else if minutes / 60 % 24 == 0 {
-					format!("{} days", minutes / 60 / 24)
-				} else {
-					format!("{} days {} hours", minutes / 60 / 24, minutes / 60 % 24)
-				}
-			}
-		};
-		if self.delay(Perbill::from_percent(49)) < Perbill::one() {
-			println!("   30% threshold:   {}", t(self.delay(Perbill::from_percent(30))));
-			println!("   10% threshold:   {}", t(self.delay(Perbill::from_percent(10))));
-			println!("   3% threshold:    {}", t(self.delay(Perbill::from_percent(3))));
-			println!("   1% threshold:    {}", t(self.delay(Perbill::from_percent(1))));
-			println!("   0.1% threshold:  {}", t(self.delay(Perbill::from_rational(1u32, 1_000))));
-			println!("   0.01% threshold: {}", t(self.delay(Perbill::from_rational(1u32, 10_000))));
-		} else {
-			println!(
-				"   99.9% threshold: {}",
-				t(self.delay(Perbill::from_rational(999u32, 1_000)))
-			);
-			println!("   99% threshold:   {}", t(self.delay(Perbill::from_percent(99))));
-			println!("   95% threshold:   {}", t(self.delay(Perbill::from_percent(95))));
-			println!("   90% threshold:   {}", t(self.delay(Perbill::from_percent(90))));
-			println!("   75% threshold:   {}", t(self.delay(Perbill::from_percent(75))));
-			println!("   60% threshold:   {}", t(self.delay(Perbill::from_percent(60))));
-		}
+		wtr.flush();
+		Ok(())
+		
 	}
 
 	/// Determine the `y` value for the given `x` value.
